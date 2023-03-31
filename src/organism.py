@@ -18,10 +18,14 @@ class Organism(pygame.sprite.Sprite):
         self.spawn_energy_threshold = 0
         self.spawn_energy_cost = 0
         self.prev_spawn_energy_cost = 0
+    
 
     def energy_death(self):
         if self.energy <= 0:
             self.living_state = "dead"
+
+    def consumption_death(self):
+        self.living_state = "dead"
 
     def add_energy(self, energy_amount):
         self.energy += energy_amount

@@ -8,6 +8,7 @@ class Prey2(Prey):
     def __init__(self, x_start, y_start, box_size, padding, fitness, growth, start_energy=200):
         from src.prey1 import Prey1
         super().__init__(x_start, y_start, box_size, padding, fitness, growth, start_energy)
+        self.__name__ = "Prey2"
         self.image = pygame.image.load("graphics/prey/prey2.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
@@ -17,6 +18,8 @@ class Prey2(Prey):
 
     def perform_actions(self):
         from src.prey1 import Prey1
+        if self.living_state == "dead":
+            return
         self.energy_consumption_rate = 50 + Prey1.prey1_count*0.01
         self.remove_energy(self.energy_consumption_rate)
         self.can_spawn()
