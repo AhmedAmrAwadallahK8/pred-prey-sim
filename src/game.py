@@ -7,6 +7,7 @@ from src.predator import Predator
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 
 class Game():
@@ -35,6 +36,22 @@ class Game():
         self.organisms_ind = {}
         self.map = np.zeros((self.width, self.height))
         self.org_map = np.empty((self.width, self.height), dtype=object)
+
+        self.fig, self.ax = plt.subplots(2, figsize=(8,8))
+        # self.prey1_line, = self.ax.plot([0], label="Prey1", c="green")
+        # self.prey2_line, = self.ax.plot([0], label="Prey2", c="purple")
+        # self.pred_line, = self.ax.plot([0], label="Predator", c="red")
+
+        # turn on blitting
+        self.fig.canvas.draw()
+        # self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
+        # self.ax.draw_artist(self.prey1_line)
+        # self.ax.draw_artist(self.prey2_line)
+        # self.ax.draw_artist(self.pred_line)
+        # self.fig.canvas.blit(self.ax.bbox)
+        # self.ax.legend()
+        plt.pause(0.1)
+
         # plt.ion()
         # self.fig, self.ax = plt.subplots(1, 2, figsize=(8, 8))
 
@@ -42,9 +59,9 @@ class Game():
         # self.cursor.fill("white")
         # self.cursor_rect = self.cursor.get_rect(center=(0, 0))
 
-        self.create_n_random_pred(20)
-        self.create_n_random_prey1(20) # 20
-        self.create_n_random_prey2(0)
+        # self.create_n_random_pred(0) # 20
+        # self.create_n_random_prey1(0) # 20
+        # self.create_n_random_prey2(1100) # 10
 
     def add_organism(self, organism):
         org_name = organism.__name__
@@ -95,6 +112,8 @@ class Game():
         self.cursor_rect = self.cursor.get_rect(center=(x, y))
 
     def create_pred(self, x, y):
+        if self.org_map[x][y] is not None:
+            return
         pred = Predator(x, y, self.grid_size, self.padding)
         # self.organisms.append(pred)
         self.add_organism(pred)
@@ -102,6 +121,8 @@ class Game():
         self.org_map[pred.x][pred.y] = pred
 
     def create_prey1(self, x, y):
+        if self.org_map[x][y] is not None:
+            return
         prey1 = Prey1(x, y, self.grid_size, self.padding, 0, 2)
         # self.organisms.append(prey1)
         self.add_organism(prey1)
@@ -109,6 +130,8 @@ class Game():
         self.org_map[prey1.x][prey1.y] = prey1
 
     def create_prey2(self, x, y):
+        if self.org_map[x][y] is not None:
+            return
         prey2 = Prey2(x, y, self.grid_size, self.padding, 0, 2)
         # self.organisms.append(prey2)
         self.add_organism(prey2)
@@ -116,6 +139,15 @@ class Game():
         self.org_map[prey2.x][prey2.y] = prey2
 
     def run(self):
+        prey1_o = int(input("Input Prey1 Initial Pop: "))
+        prey2_o = int(input("Input Prey2 Initial Pop: "))
+        pred_o = int(input("Input Pred Initial Pop: "))
+
+        self.create_n_random_pred(pred_o)  # 20
+        self.create_n_random_prey1(prey1_o)  # 20
+        self.create_n_random_prey2(prey2_o)  # 10
+
+
         while self.running:
             self.screen.fill("black")
             self.curr_time += 1
@@ -235,13 +267,24 @@ class Game():
             #     continue
             if organism.spawned_child():
                 potential_child = organism.create_child()
-                if (potential_child.x < 0) or (potential_child.x >= self.width):
-                    potential_child.kill_organism()
-                    organism.refund_spawn_energy()
-                elif (potential_child.y < 0) or (potential_child.y >= self.height):
-                    potential_child.kill_organism()
-                    organism.refund_spawn_energy()
-                elif self.org_map[potential_child.x][potential_child.y] is not None:
+                discrete_diff = int((self.grid_size + self.padding)/2)
+                max_x = int(self.width/(discrete_diff*2)) - 2
+                max_y = int(self.height/(discrete_diff*2)) - 2
+                if potential_child.x >= self.width:
+                    potential_child.x = 2*discrete_diff
+                if potential_child.x < 0:
+                    potential_child.x = max_x*discrete_diff*2
+                if potential_child.y >= self.height:
+                    potential_child.y = 2*discrete_diff
+                if potential_child.y < 0:
+                    potential_child.y = max_y*discrete_diff*2
+                # if (potential_child.x < 0) or (potential_child.x >= self.width):
+                #     potential_child.kill_organism()
+                #     organism.refund_spawn_energy()
+                # elif (potential_child.y < 0) or (potential_child.y >= self.height):
+                #     potential_child.kill_organism()
+                #     organism.refund_spawn_energy()
+                if self.org_map[potential_child.x][potential_child.y] is not None:
                     potential_child.kill_organism()
                     organism.refund_spawn_energy()
                 else:
@@ -277,6 +320,61 @@ class Game():
         #     self.add_organism(child)
 
         # self.organisms.extend(actual_children)
+
+    # Has some severe lag issues
+    def efficient_plot(self):
+        self.prey1_line, = self.ax.plot(self.prey1_history, label="Prey1", c="green")
+        self.prey2_line, = self.ax.plot(self.prey2_history, label="Prey2", c="purple")
+        self.pred_line, = self.ax.plot(self.pred_history, label="Predator", c="red")
+        
+        self.fig.canvas.blit(self.ax.bbox)
+        plt.pause(0.0001)
+
+    def multi_plot(self):
+        self.ax[0].clear()
+
+        self.ax[0].set_title('Prey1, Prey2, Pred v Time')
+        self.ax[0].plot(self.prey1_history, label="Prey1", c="green")
+        self.ax[0].plot(self.prey2_history, label="Prey2", c="purple")
+        self.ax[0].plot(self.pred_history, label="Predator", c="red")
+        self.ax[0].set_xlabel("Time")
+        self.ax[0].set_ylabel("Prey Pop")
+        self.ax[0].legend()
+        # ax[0].ylim(ymin=0)
+        # ax[0].show(block=False)
+
+        if Prey1.prey1_count != 0 and Prey2.prey2_count != 0:
+            self.ax[1].clear()
+            self.ax[1].set_title('Prey1 v Prey2')
+            self.ax[1].set_xlabel("Prey2")
+            self.ax[1].set_ylabel("Prey1")
+
+            if len(self.prey1_history) > 20:
+                self.ax[1].plot(self.prey2_history, self.prey1_history, c="black", label="Old Data")#.set_sizes([2])
+                self.ax[1].plot(self.prey2_history[-20:], self.prey1_history[-20:], c="orange", label="Recent 20 Samples")#.set_sizes([5])
+                self.ax[1].legend()
+            else:
+                self.ax[1].plot(self.prey2_history, self.prey1_history, c="orange")#.set_sizes([5])
+        elif Prey2.prey2_count != 0 and Predator.predator_count != 0:
+            self.ax[1].clear()
+            self.ax[1].set_title('Prey2 v Pred')
+            self.ax[1].set_xlabel("Prey2")
+            self.ax[1].set_ylabel("Pred")
+
+            if len(self.pred_history) > 20:
+                self.ax[1].plot(self.prey2_history, self.pred_history, c="black", label="Old Data" )#.set_sizes([2])
+                self.ax[1].plot(self.prey2_history[-20:], self.pred_history[-20:], c="orange", label="Recent 20 Samples")#.set_sizes([5])
+                self.ax[1].legend()
+            else:
+                self.ax[1].plot(self.prey2_history, self.pred_history, c="orange")#.set_sizes([5])
+
+
+
+
+
+        self.fig.canvas.draw()
+        plt.pause(0.000001)
+
 
     def plot(self):
 
@@ -341,5 +439,7 @@ class Game():
         for organism in self.organisms_ind.keys():
             self.screen.blit(organism.image, organism.rect)
         # self.plot()
+        self.multi_plot()
+        # self.efficient_plot()
 
 

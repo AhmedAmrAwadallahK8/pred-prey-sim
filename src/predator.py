@@ -12,12 +12,13 @@ class Predator(Organism):
         self.image = pygame.image.load("graphics/predator/pred.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
-        self.energy_consumption_factor = 1
-        self.energy_consumption_rate = 10
-        self.max_energy_gain = 100000
+        self.energy_consumption_factor = 0.75
+        self.energy_consumption_rate = 15 #10
+        self.max_energy_gain = 100
         self.spawn_energy_threshold = 400
-        self.spawn_energy_cost = 20
+        self.spawn_energy_cost = 100
         self.spawn_percent = 0.5
+        self.max_energy = 600
         Predator.predator_count += 1
 
     def update(self):
@@ -50,7 +51,13 @@ class Predator(Organism):
         # self.rect = self.image.get_rect(center=(self.x, self.y))
 
     def consume_prey(self, energy):
-        self.add_energy(energy*self.energy_consumption_factor)
+        if self.energy > self.max_energy:
+            return
+        elif energy > self.max_energy_gain:
+            self.add_energy(self.max_energy_gain*self.energy_consumption_factor)
+        else:
+            self.add_energy(energy*self.energy_consumption_factor)
+            
     
     def receive_energy(self, available_energy):
         self.add_energy(available_energy)
